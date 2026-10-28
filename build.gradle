@@ -1,49 +1,50 @@
-buildscript {
-    repositories {
-        mavenCentral()
-        mavenLocal()
-    }
-    ext{
-        karateVersion = '1.2.0'
-    }
-}
-
 plugins {
     id 'java'
 }
 
-group 'com.cedaniel200'
-version '1.0-SNAPSHOT'
+group = 'com.cedaniel200'
+version = '1.0.0'
 
-java.sourceCompatibility = JavaVersion.VERSION_1_8
-
-sourceSets {
-    test {
-        resources {
-            srcDirs = ['src/test/resources','src/test/java']
-            exclude '**/*.java'
-        }
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
     }
 }
 
 repositories {
     mavenCentral()
-    mavenLocal()
+}
+
+ext {
+    karateVersion = '1.5.2'
+    junitPlatformVersion = '1.11.4'
+}
+
+sourceSets {
+    test {
+        resources {
+            srcDirs = ['src/test/resources', 'src/test/java']
+            exclude '**/*.java'
+        }
+    }
 }
 
 dependencies {
-    testImplementation "com.intuit.karate:karate-junit5:$rootProject.ext.karateVersion"
-    testImplementation 'net.masterthought:cucumber-reporting:5.7.2'
+    testImplementation "io.karatelabs:karate-junit5:$karateVersion"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:$junitPlatformVersion"
 }
 
-test {
+tasks.named('test') {
     useJUnitPlatform()
-    systemProperty "karate.options", System.properties.getProperty("karate.options")
-    systemProperty "karate.env", System.properties.getProperty("karate.env")
+    systemProperty 'karate.env', System.getProperty('karate.env', 'dev')
+    def karateOptions = System.getProperty('karate.options')
+    if (karateOptions) {
+        systemProperty 'karate.options', karateOptions
+    }
     outputs.upToDateWhen { false }
 }
 
-task karateExecute(type: JavaExec) {
+tasks.register('karateExecute', JavaExec) {
     classpath = sourceSets.test.runtimeClasspath
-    main = 'com.intuit.karate.cli.Main'
+    mainClass = 'com.intuit.karate.cli.Main'
 }

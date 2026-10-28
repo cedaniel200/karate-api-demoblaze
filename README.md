@@ -1,116 +1,79 @@
-# Karate Example
+# Karate — Demo API Demoblaze
 
-API https://api.demoblaze.com
+![Java](https://img.shields.io/badge/Java-17-blue)
+![Karate](https://img.shields.io/badge/Karate-1.5.2-green)
+![JUnit 5](https://img.shields.io/badge/JUnit-5.11.4-brightgreen)
+![Gradle](https://img.shields.io/badge/Gradle-9.8.2-darkgreen)
+[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-### Tecnologías de desarrollo
-Este ejemplo fue construída con las siguientes herramientas y lenguajes:
+Pruebas de API con [Karate](https://karatelabs.github.io/karate/) contra
+[api.demoblaze.com](https://api.demoblaze.com): login y registro, incluidos los casos de error.
+Los escenarios se ejecutan en paralelo y el informe HTML lo genera Karate.
 
-* Gradle 7.1
-* Java 8
-* karate-junit5
-* cucumber-reporting
+## Qué incluye
 
-## Detalles generales de la implementación
+- **7 escenarios** en dos features: 4 de login y 3 de registro.
+- **Validación de respuestas** con `match`, incluyendo mensajes de error de la API.
+- **Datos y cabeceras** en JSON reutilizables desde los features.
+- **Ejecución en paralelo** con 5 hilos y reporte HTML nativo de Karate.
+- **Gradle 9.8.2** con wrapper y toolchain de Java 17.
 
-````
-+ runners
-    Clases que permiten correr los tests
-+ features
-    La representación de las historias en archivos cucumber junto con los escenarios a probar
-+ utils
-    Clases de utilidad
-+ data
-    Contiene los archivos json con los datos usados dentro de las pruebas
-+ headers
-    Contiene los headers en archivos json, utilizados al momentos de realizar las peticiones http
-````
+## Requisitos
 
-## Requerimientos
+- **JDK 17**. El build usa toolchain, así que Gradle necesita un JDK 17 disponible.
+- **Gradle**: no hace falta instalarlo; el wrapper va incluido.
+- **Acceso a internet**: los tests llaman a la API pública de Demoblaze.
 
-Para correr el proyecto se necesita Java JDK 1.8 y Gradle preferiblemente con la versión 7.1.
+## Cómo se ejecuta
 
-## Para correr el proyecto
+```sh
+./gradlew test
+```
 
-Para ejecutar todos los test en paralelo y generar los reportes se debe ejecutar el siguiente comando:
+El informe queda en `build/karate-reports/karate-summary.html`. También se genera el JSON de
+Cucumber en `build/karate-reports/`.
 
-    gradle clean test --tests "com.cedaniel200.api.runners.ParallelTest"
+Para ejecutar un feature concreto:
 
-Se generarán los siguientes reportes:
-* **Cucumber**: Reporte ubicado en la carpeta **/target/cucumber-html-reports/**  abrir el archivo **overview-features.html**
-* **Karate**: Reporte ubicado en la carpeta **/build/karate-reports/** abrir el archivo **karate-summary.html**
+```sh
+./gradlew test -Dkarate.options="classpath:com/cedaniel200/api/features/login.feature"
+```
 
-# Descripción de la API
+## Estructura
 
-## Path /signup
+```text
+src/test/java
+├── karate-config.js                  # URL base y entorno
+└── com/cedaniel200/api
+    ├── features
+    │   ├── login.feature
+    │   ├── signup.feature
+    │   ├── data/users.json           # usuarios de prueba
+    │   └── headers/header.json       # cabeceras HTTP
+    ├── runners/KarateTestSuite.java  # ejecución paralela
+    └── utils/UsernameRandom.java     # usuario único para el registro
+```
 
-### Request
-#### Body
-````
-    {
-        "username": "anUsername",
-        "password": "aPassword"
-    }
-````
-### Responses
-#### Creasión exitosa de un usuario
-````
-    Status 200
-    ""
-````
+## La API
 
-#### Usuario existente
-````
-    Status 200
-    {
-	    "errorMessage": "This user already exist."
-    }
-````
+| Método | Ruta | Caso | Respuesta esperada |
+|---|---|---|---|
+| `POST` | `/login` | Credenciales correctas | `Auth_token` |
+| `POST` | `/login` | Usuario inexistente | `User does not exist.` |
+| `POST` | `/login` | Contraseña incorrecta | `Wrong password.` |
+| `POST` | `/login` | Falta la contraseña | `Bad parameter, missing username` |
+| `POST` | `/signup` | Usuario nuevo | `200` sin `errorMessage` |
+| `POST` | `/signup` | Usuario existente | `This user already exist.` |
+| `POST` | `/signup` | Faltan datos | `Bad parameter, missing username or password` |
 
-#### Parametro errado
-````
-    Status 200
-    {
-	    "errorMessage": "Bad parameter, missing username or password"
-    }
-````
+## Ten en cuenta
 
-## Path /login
+- **La API es pública y externa.** Si Demoblaze no responde, los tests fallan por red, no por el
+  código.
+- **El registro crea usuarios reales** en la API con un nombre aleatorio. Es un entorno de demo,
+  no uses datos personales.
+- **No hay credenciales en el repositorio.** El usuario de login es el de la propia API de ejemplo.
 
-### Request
-#### Body
-````
-    {
-        "username": "anUsername",
-        "password": "aPassword"
-    }
-````
-### Responses
-#### Login exitoso
-````
-    Status 200
-    "Auth_token: ########-aToken-#########"
-````
+## Licencia
 
-#### Contraseña errada
-````
-    Status 200
-    {
-        "errorMessage": "Wrong password."
-    }
-````
-
-#### Usuario no existe
-````
-    Status 200
-    {
-        "errorMessage": "User does not exist."
-    }
-````
-
-#### Parametro errado
-````
-    Status 200
-    {
-        "errorMessage": "Bad parameter, missing username"
-    }
-````
+[MIT](LICENSE) © Cesar Daniel
